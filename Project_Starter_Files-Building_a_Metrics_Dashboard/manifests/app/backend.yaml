@@ -1,9 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend-app
+  name: backend
+  annotations:
+    sidecar.jaegertracing.io/inject: 'true'
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/metrics'
+    prometheus.io/port: backendport
+  labels:
+    monitoring: 'true'
+    release: prometheus # probably not needed
+    app: backend
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: backend
@@ -14,18 +23,51 @@ spec:
     spec:
       containers:
       - name: backend
-        image: ghcr.io/thejaysmith/backend:v1
+        env:
+        - name: JAEGER_AGENT_HOST
+          value: my-trace-agent.observability.svc.cluster.local
+        image: solondungu/backend:v1.0.0
+        imagePullPolicy: Always
         ports:
-        - containerPort: 8081
+        - name: backendport
+          containerPort: 8081
+          protocol: TCP
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend-service
+  name: backend
+  labels:
+    monitoring: 'true'
+    release: prometheus # probably not needed
+    app: backend # needed to match the selector in servicemonitor
 spec:
   selector:
     app: backend
   ports:
-    - port: 8081
-      targetPort: 8080
-  type: LoadBalancer
+  - name: backend
+    port: 8081
+    targetPort: backendport
+    protocol: TCP
+  type: NodePort
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: backend-monitor
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  endpoints:
+  - port: backend # name of the service port
+    targetPort: backendport # name of number of target port of the pod
+    interval: 30s
+    path: /metrics
+  jobLabel: monitoringbackend
+  namespaceSelector:
+    matchNames:
+    - default
+  selector:
+    matchLabels:
+      app: backend # monitoring 'true' # <- matching whatever chosen to be monitored

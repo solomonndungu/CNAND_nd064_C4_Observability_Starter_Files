@@ -1,9 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend-app
+  name: frontend
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/metrics'
+    prometheus.io/port: frontendport
+  labels:
+    monitoring: 'true'
+    release: prometheus
+    app: frontend
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: frontend
@@ -14,18 +22,48 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ghcr.io/thejaysmith/myfrontend:v1
+        image: solondungu/frontend:v1.0.0
+        imagePullPolicy: Always
         ports:
-        - containerPort: 8080
+        - name: frontendport
+          containerPort: 8080
+          protocol: TCP
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend-service
+  name: frontend
+  labels:
+    monitoring: 'true'
+    release: prometheus
+    app: frontend
 spec:
   selector:
     app: frontend
   ports:
-    - port: 8080
-      targetPort: 83080
+    - name: frontend
+      port: 8080
+      targetPort: frontendport
+      protocol: TCP
   type: LoadBalancer
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: frontend-monitor
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  endpoints:
+  - port: frontend
+    targetPort: frontendport
+    interval: 30s
+    path: /metrics
+  jobLabel: monitoringfrontend
+  namespaceSelector:
+    matchNames:
+    - default # in this projects all my apps are deployed here
+  selector:
+    matchLabels:
+      app: frontend # monitoring: 'true' # <- matching whatever chosen to be monitored
