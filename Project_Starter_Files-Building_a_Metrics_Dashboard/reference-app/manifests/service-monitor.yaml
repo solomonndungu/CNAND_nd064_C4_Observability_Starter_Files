@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: common-monitor
+  namespace: monitoring
+  annotations:
+    sidecar.jaegertracing.io/inject: "true"
+    prometheus.io/scrape: "true"
+    prometheus.io/path: /metrics
+    prometheus.io/port: backend-port
+  labels:
+    release: prometheus
+spec:
+  endpoints:
+  - port: backend-port # metrics originally
+    interval: 30s
+    path: /metrics
+  jobLabel: monitoring
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      monitoring: "true" # <- matching whatever chosen as common
