@@ -2,14 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: trial-app
-  annotations:
-    sidecar.jaegertracing.io/inject: 'true'
-    prometheus.io/scrape: 'true'
-    prometheus.io/path: '/metrics'
-    prometheus.io/port: trialport
-  labels:
-    release: prometheus
-    app: trial
 spec:
   replicas: 1
   selector:
