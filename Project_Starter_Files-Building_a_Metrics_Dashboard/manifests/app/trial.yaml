@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: trial-app
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: trial
@@ -14,30 +14,21 @@ spec:
     spec:
       containers:
       - name: trial
-        image: solondungu/trial:v1.0.0
-        imagePullPolicy: Always
+        image: ghcr.io/thejaysmith/trial:v1
         ports:
-        - name: trialport
-          containerPort: 8080
-          protocol: TCP
+        - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: trial
-    labels:
-      release: prometheus
-      app: trial
-      monitoring: 'true'
+  name: trial-service
 spec:
   selector:
     app: trial
   ports:
-    - name: trial
-      port: 8082
-      targetPort: trialport
-      protocol: TCP
-  type: NodePort
+    - port: 8082
+      targetPort: 8080
+  type: LoadBalancer
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

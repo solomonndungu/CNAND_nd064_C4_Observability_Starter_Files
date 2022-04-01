@@ -5,6 +5,8 @@
 *TODO:* run `kubectl` command to show the running pods and services for all components. Take a screenshot of the output and include it here to verify the installation
 
 `kubectl get pods,svc -n observability`
+
+`connecting jaeger to grafana: simpletest-query.observability.svc.cluster.local:16686`
 Pods and Services.png
 
 ## Setup the Jaeger and Prometheus source
