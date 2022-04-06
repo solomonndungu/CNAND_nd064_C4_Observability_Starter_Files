@@ -3,10 +3,15 @@ from prometheus_flask_exporter import PrometheusMetrics
 import pymongo
 from flask_pymongo import PyMongo
 
-app = Flask(__name__)
-metrics = PrometheusMetrics(app, group_by='endpoint')
-metrics.info("backend_app_info", "Backend App Info", version="1.0.3")
+from jaeger_client import Config
+from flask_opentracing import FlaskTracing
+from prometheus_flask_exporter import PrometheusMetrics
+from opentracing.ext import tags as ext_tags
 
+import requests
+import time
+
+app = Flask(__name__)
 
 app.config["MONGO_DBNAME"] = "example-mongodb"
 app.config[
@@ -15,6 +20,25 @@ app.config[
 
 mongo = PyMongo(app)
 
+metrics = PrometheusMetrics(app, group_by='endpoint')
+metrics.info("backend_app_info", "Backend App info", version="1.0.3")
+
+config = Config(
+    config={
+        'sampler':
+        {
+            'type:const',
+            'param':1
+        },
+        'logging': True,
+        'reporter_batch_size': 1,
+    },
+    service_name="backend"
+)
+jaeger_tracer = config.initialize_tracer()
+
+# Trace All requests
+tracing = FlaskTracing(jaeger_tracer, True, app)
 
 @app.route("/")
 def homepage():
@@ -42,7 +66,6 @@ def add_star():
     new_star = star.find_one({"_id": star_id})
     output = {"name": new_star["name"], "distance": new_star["distance"]}
     return jsonify({"result": output})
-
 
 if __name__ == "__main__":
     app.run()
