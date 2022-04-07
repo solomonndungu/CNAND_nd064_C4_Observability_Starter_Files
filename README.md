@@ -6,11 +6,13 @@ The  **Exercise_Starter_Files** directory has all of the files you'll need for t
 
 The **Project_Starter_Files** directory has the files you'll need for the project at the end of the course.
 
+## PREPARING THE OBSERVABILITY PROJECT
 When vagrant protests that the private network ip should be put to another, change the following
 line in Vagrantfile: 
 `  config.vm.network "private_network", ip: "192.168.56.10"`
 
-## PREPARING THE OBSERVABILITY PROJECT
+
+
 `vagrant up`
 `vagrant provision` to update vagrant files
 `vagrant ssh`
@@ -56,8 +58,8 @@ Do the above procedure with `frontend.yaml`, `trial.yaml`, `jaeger.yaml` and `se
 Run `kubectl get pod -n monitoring | grep grafana` and look for something named
 `prometheus-grafana-###########` where the `#` are random characters.
 Copy the `prometheus-grafana-###########` line in its entirety
-Run `kubectl port-forward -n monitoring prometheus-grafana-######## 3000` replacing `#` with 
-the string copied above.
+Run `kubectl port-forward -n monitoring prometheus-grafana-######## --address 0.0.0.0 3000`
+ replacing `#` with the string copied above.
 In your browser, navigate to `localhost:3000`
 Log in with `username: admin` and `password:prom-operator`
 
