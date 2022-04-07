@@ -8,8 +8,8 @@ WORKDIR $APP_HOME
 COPY . ./
 
 # Install production dependencies.
-RUN apt-get update && \
-    pip install --upgrade pip && \
-    pip install -r requirements.txt
+RUN apt-get update
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
 CMD ["gunicorn", "--access-logfile", "-", "--error-logfile", "-", "-w", "4", "-b", "0.0.0.0:8080", "app:app"]

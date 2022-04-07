@@ -11,8 +11,26 @@ When vagrant protests that the private network ip should be put to another, chan
 line in Vagrantfile: 
 `  config.vm.network "private_network", ip: "192.168.56.10"`
 
+## Build docker image for trial.yaml file
+Build an image using the Dockerfile in the current directory.
+`docker build -t trial .`
+To see the image locally:
+`docker images`
+We could test the application locally.
+`docker run -d -p 5000:5000 trial`
+This code will check the running containers:
+`docker ps`
+Tag locally before pushing to dockerhub
+`docker tag trial solondungu/trial:v1`
+To see the tagged image locally"
+`docker images`
+Push the tagged image to dockerhub:
+`docker push solondungu/trial:v1`
+If there is access denied, login to dockerhub from your local machine and enter
+username and password
+`docker login`
 
-
+## Running vagrantfile to install vm
 `vagrant up`
 `vagrant provision` to update vagrant files
 `vagrant ssh`
