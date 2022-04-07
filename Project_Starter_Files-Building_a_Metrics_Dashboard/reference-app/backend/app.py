@@ -4,12 +4,11 @@ import pymongo
 from flask_pymongo import PyMongo
 
 from jaeger_client import Config
-from flask_opentracing import FlaskTracing
 from prometheus_flask_exporter import PrometheusMetrics
-from opentracing.ext import tags as ext_tags
 
-import requests
-import time
+
+import time, random, logging
+fromm os import getenv
 
 app = Flask(__name__)
 
@@ -23,26 +22,41 @@ mongo = PyMongo(app)
 metrics = PrometheusMetrics(app, group_by='endpoint')
 metrics.info("backend_app_info", "Backend App info", version="1.0.3")
 
+metrics.register_default(
+    metrics.counter(
+        'by_path_counter', 'Request count by request paths',
+        labels={'path': lambda: request.path}
+    )
+)
+
+by_endpoint_counter = metrics.counter(
+    'by_endpoint_counter', 'Request count by request endpoint',
+    labels={'endpoint':lambda: request.endpoint}
+)
+
+JAEGER_AGENT_HOST = getenv('JAEGER_AGENT_HOST', 'localhost')
+
 config = Config(
     config={
         'sampler':
         {
-            'type:const',
+            'type': 'const',
             'param':1
         },
         'logging': True,
-        'reporter_batch_size': 1,
+        'local_agent': {
+            'reporting_host': JAEGER_AGENT_HOST
+        },
     },
     service_name="backend"
 )
-jaeger_tracer = config.initialize_tracer()
-
-# Trace All requests
-tracing = FlaskTracing(jaeger_tracer, True, app)
+tracer = config.initialize_tracer()
 
 @app.route("/")
+@by_endpoint_counter
 def homepage():
-    return "Hello World"
+    with tracer.start_span('hello-world'):
+     return "Hello World"
 
 #metrics.register_default(
 #    metrics.counter(
@@ -52,12 +66,15 @@ def homepage():
 #)
 
 @app.route("/api")
+@by_endpoint_counter
 def my_api():
-    answer = "something"
-    return jsonify(repsonse=answer)
+    with tracer.start_span('api'):
+        answer = "something"
+        return jsonify(repsonse=answer)
 
-
+# This will return 405 error
 @app.route("/star", methods=["POST"])
+@by_endpoint_counter
 def add_star():
     star = mongo.db.stars
     name = request.json["name"]
@@ -68,4 +85,4 @@ def add_star():
     return jsonify({"result": output})
 
 if __name__ == "__main__":
-    app.run()
+    app.run(threaded=True)
