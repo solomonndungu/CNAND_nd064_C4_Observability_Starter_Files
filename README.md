@@ -29,7 +29,7 @@ Push the tagged image to dockerhub:
 If there is access denied, login to dockerhub from your local machine and enter
 username and password
 `docker login`
-
+Do the steps above with backend and frontend dockerfiles.
 ## Running vagrantfile to install vm
 `vagrant up`
 `vagrant provision` to update vagrant files
